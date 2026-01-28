@@ -1,0 +1,12 @@
+{
+  "name": "wsteth-earnings-tracker",
+  "version": "1.0.0",
+  "description": "Track wstETH staking earnings on Arbitrum",
+  "main": "wsteth-earnings.js",
+  "scripts": {
+    "check": "node wsteth-earnings.js"
+  },
+  "dependencies": {
+    "ethers": "^6.9.0"
+  }
+}
