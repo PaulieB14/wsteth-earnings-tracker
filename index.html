@@ -134,15 +134,46 @@
     .chain-row-value { font-size: 13px; font-family: 'SF Mono', Monaco, monospace; color: #fff; }
     .chain-row-zero { color: #4a6080; }
 
+    /* ── Hero Value ── */
+    .hero-value-box {
+      text-align: center; padding: 20px 0 16px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 16px;
+    }
+    .hero-label { font-size: 13px; color: #6b8aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .hero-usd { font-size: 38px; font-weight: 700; font-family: 'SF Mono', Monaco, monospace; color: #fff; }
+    .hero-sub { font-size: 14px; color: #6b8aaa; margin-top: 4px; font-family: 'SF Mono', Monaco, monospace; }
+
     /* ── Earnings Box ── */
     .earnings-box {
       background: linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(0, 166, 125, 0.1) 100%);
       border: 1px solid rgba(0, 212, 170, 0.3); border-radius: 16px;
-      padding: 24px; text-align: center; margin-top: 20px;
+      padding: 24px; text-align: center; margin-bottom: 16px;
     }
     .earnings-label { color: #00d4aa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .earnings-value { font-size: 32px; font-weight: 700; font-family: 'SF Mono', Monaco, monospace; }
-    .earnings-percent { color: #00d4aa; font-size: 18px; margin-top: 6px; font-weight: 600; }
+    .earnings-usd { font-size: 36px; font-weight: 700; font-family: 'SF Mono', Monaco, monospace; color: #fff; }
+    .earnings-percent { color: #00d4aa; font-size: 20px; margin-top: 6px; font-weight: 600; }
+    .earnings-detail { font-size: 13px; color: #6b8aaa; margin-top: 8px; font-family: 'SF Mono', Monaco, monospace; }
+
+    /* ── Daily Estimate ── */
+    .daily-box {
+      background: rgba(0, 163, 255, 0.08); border: 1px solid rgba(0, 163, 255, 0.2);
+      border-radius: 12px; padding: 14px 18px; text-align: center; margin-bottom: 16px;
+      display: flex; justify-content: space-around; flex-wrap: wrap; gap: 12px;
+    }
+    .daily-item { text-align: center; }
+    .daily-item-label { font-size: 11px; color: #6b8aaa; text-transform: uppercase; letter-spacing: 0.5px; }
+    .daily-item-value { font-size: 16px; font-weight: 600; font-family: 'SF Mono', Monaco, monospace; color: #00a3ff; margin-top: 2px; }
+
+    /* ── Details Toggle ── */
+    .details-toggle {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      cursor: pointer; color: #4a6080; font-size: 12px; padding: 8px;
+      border: none; background: none; width: 100%; transition: color 0.2s;
+    }
+    .details-toggle:hover { color: #6b8aaa; }
+    .details-toggle svg { width: 14px; height: 14px; transition: transform 0.2s; }
+    .details-toggle.open svg { transform: rotate(180deg); }
+    .details-content { display: none; padding-top: 8px; }
+    .details-content.open { display: block; }
 
     /* ── Chart ── */
     .chart-card { display: none; }
@@ -300,33 +331,67 @@
     <div class="card results" id="results">
       <div class="loading" id="loading">Fetching data across chains</div>
       <div id="data" style="display:none;">
-        <!-- Chain Breakdown -->
-        <div class="chain-breakdown" id="chainBreakdown"></div>
 
-        <div class="stat-row">
-          <span class="stat-label">Total wstETH</span>
-          <span class="stat-value" id="balance">-</span>
+        <!-- Hero: Your Portfolio Value (always shown) -->
+        <div class="hero-value-box">
+          <div class="hero-label">Your wstETH Position</div>
+          <div class="hero-usd" id="heroUsd">$0</div>
+          <div class="hero-sub" id="heroSub">0 wstETH</div>
         </div>
-        <div class="stat-row">
-          <span class="stat-label">Current Rate</span>
-          <span class="stat-value" id="rate">-</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Value (stETH)</span>
-          <span class="stat-value" id="value">-</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Value (ETH)</span>
-          <span class="stat-value" id="valueEth">-</span>
-        </div>
+
+        <!-- Earnings (only if entry rate set AND balance > 0) -->
         <div class="earnings-box" id="earningsBox" style="display:none;">
-          <div class="earnings-label">Total Earnings</div>
-          <div class="earnings-value" id="earnings">-</div>
-          <div class="earnings-percent" id="earningsPercent">-</div>
+          <div class="earnings-label">You Earned</div>
+          <div class="earnings-usd" id="earningsUsd">$0</div>
+          <div class="earnings-percent" id="earningsPercent">+0%</div>
+          <div class="earnings-detail" id="earningsDetail"></div>
         </div>
+
+        <!-- Daily/Monthly/Yearly earning rate (always shown if balance > 0) -->
+        <div class="daily-box" id="dailyBox" style="display:none;">
+          <div class="daily-item">
+            <div class="daily-item-label">Per Day</div>
+            <div class="daily-item-value" id="earnPerDay">-</div>
+          </div>
+          <div class="daily-item">
+            <div class="daily-item-label">Per Month</div>
+            <div class="daily-item-value" id="earnPerMonth">-</div>
+          </div>
+          <div class="daily-item">
+            <div class="daily-item-label">Per Year</div>
+            <div class="daily-item-value" id="earnPerYear">-</div>
+          </div>
+        </div>
+
+        <!-- No entry rate hint -->
         <p class="note" id="noEntryNote" style="display:none;">
-          Enter your entry rate or click Auto-Detect to calculate earnings
+          Enter your entry rate or click Auto-Detect to calculate total earnings
         </p>
+
+        <!-- Collapsible Details -->
+        <button class="details-toggle" id="detailsToggle" onclick="toggleDetails()">
+          <span>Show Details</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="details-content" id="detailsContent">
+          <div class="chain-breakdown" id="chainBreakdown"></div>
+          <div class="stat-row">
+            <span class="stat-label">Total wstETH</span>
+            <span class="stat-value" id="balance">-</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Current Rate</span>
+            <span class="stat-value" id="rate">-</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Value (stETH)</span>
+            <span class="stat-value" id="value">-</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Value (ETH)</span>
+            <span class="stat-value" id="valueEth">-</span>
+          </div>
+        </div>
       </div>
       <div class="error" id="error" style="display:none;"></div>
     </div>
@@ -974,6 +1039,7 @@
         var breakdownHTML = '<div class="chain-breakdown-title">Balance by Chain</div>';
 
         var allChainKeys = Object.keys(CHAINS);
+        var chainsWithBalance = 0;
         for (var i = 0; i < allChainKeys.length; i++) {
           var key = allChainKeys[i];
           var result = null;
@@ -983,21 +1049,49 @@
           if (!result) continue;
           var chain = CHAINS[key];
           totalBalance += result.balance;
-          var valClass = result.balance > 0 ? '' : 'chain-row-zero';
-          breakdownHTML += '<div class="chain-row"><span class="chain-row-name"><span class="chain-dot" style="background:' + chain.color + ';"></span> ' + chain.name + '</span><span class="chain-row-value ' + valClass + '">' + (result.balance > 0 ? result.balance.toFixed(6) : '0') + (result.error ? ' (err)' : '') + '</span></div>';
+          if (result.balance > 0) chainsWithBalance++;
+          // Only show chains with balance, or errors
+          if (result.balance > 0 || result.error) {
+            breakdownHTML += '<div class="chain-row"><span class="chain-row-name"><span class="chain-dot" style="background:' + chain.color + ';"></span> ' + chain.name + '</span><span class="chain-row-value">' + result.balance.toFixed(6) + (result.error ? ' (err)' : '') + '</span></div>';
+          }
+        }
+        if (chainsWithBalance === 0) {
+          breakdownHTML += '<div style="text-align:center;color:#ff6b6b;padding:8px;font-size:13px;">No wstETH found on selected chains</div>';
         }
         breakdownEl.innerHTML = breakdownHTML;
 
         var valueInStETH = totalBalance * currentRate;
         var valueInETH = valueInStETH * prices.stethEthRatio;
+        var totalUSD = valueInETH * prices.eth;
 
+        // ── Hero: Portfolio Value ──
+        document.getElementById('heroUsd').textContent = '$' + totalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('heroSub').textContent = totalBalance.toFixed(6) + ' wstETH (' + valueInETH.toFixed(4) + ' ETH)';
+
+        // ── Details (collapsed) ──
         document.getElementById('balance').textContent = totalBalance.toFixed(6) + ' wstETH';
         document.getElementById('rate').textContent = '1 wstETH = ' + currentRate.toFixed(6) + ' stETH';
         document.getElementById('value').textContent = valueInStETH.toFixed(6) + ' stETH';
-        document.getElementById('valueEth').textContent = valueInETH.toFixed(6) + ' ETH (~$' + (valueInETH * prices.eth).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ')';
+        document.getElementById('valueEth').textContent = valueInETH.toFixed(6) + ' ETH (~$' + totalUSD.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ')';
 
-        // Earnings
-        if (entryRateInput) {
+        // ── Daily/Monthly/Yearly earning estimates ──
+        var apy = computeAPY(historicalRates);
+        if (apy !== null && totalBalance > 0) {
+          var dailyRate = apy / 365 / 100;
+          var dailyUSD = totalUSD * dailyRate;
+          var monthlyUSD = dailyUSD * 30;
+          var yearlyUSD = totalUSD * (apy / 100);
+
+          document.getElementById('earnPerDay').textContent = '~$' + dailyUSD.toFixed(2);
+          document.getElementById('earnPerMonth').textContent = '~$' + monthlyUSD.toFixed(0);
+          document.getElementById('earnPerYear').textContent = '~$' + yearlyUSD.toFixed(0);
+          document.getElementById('dailyBox').style.display = 'flex';
+        } else {
+          document.getElementById('dailyBox').style.display = 'none';
+        }
+
+        // ── Earnings (USD-first) ──
+        if (entryRateInput && totalBalance > 0) {
           var entryRate = parseFloat(entryRateInput);
           if (!isNaN(entryRate) && entryRate > 0) {
             var earningsStETH = valueInStETH - (totalBalance * entryRate);
@@ -1005,11 +1099,9 @@
             var earningsPercent = ((currentRate / entryRate) - 1) * 100;
             var earningsUSD = earningsETH * prices.eth;
 
-            document.getElementById('earnings').innerHTML =
-              earningsStETH.toFixed(6) + ' stETH<br>' +
-              '<span style="font-size:20px;color:#8ba4c4;">' + earningsETH.toFixed(6) + ' ETH</span><br>' +
-              '<span style="font-size:24px;">~$' + earningsUSD.toFixed(2) + '</span>';
-            document.getElementById('earningsPercent').textContent = (earningsStETH >= 0 ? '+' : '') + earningsPercent.toFixed(4) + '%';
+            document.getElementById('earningsUsd').textContent = (earningsUSD >= 0 ? '+' : '-') + '$' + Math.abs(earningsUSD).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('earningsPercent').textContent = (earningsPercent >= 0 ? '+' : '') + earningsPercent.toFixed(2) + '%';
+            document.getElementById('earningsDetail').textContent = earningsETH.toFixed(4) + ' ETH / ' + earningsStETH.toFixed(4) + ' stETH';
             document.getElementById('earningsBox').style.display = 'block';
             document.getElementById('noEntryNote').style.display = 'none';
           } else {
@@ -1017,13 +1109,15 @@
             document.getElementById('noEntryNote').style.display = 'block';
             document.getElementById('noEntryNote').textContent = 'Invalid entry rate format';
           }
-        } else {
+        } else if (totalBalance > 0) {
           document.getElementById('earningsBox').style.display = 'none';
           document.getElementById('noEntryNote').style.display = 'block';
+        } else {
+          document.getElementById('earningsBox').style.display = 'none';
+          document.getElementById('noEntryNote').style.display = 'none';
         }
 
-        // APY
-        var apy = computeAPY(historicalRates);
+        // APY badge in header
         if (apy !== null) {
           document.getElementById('apyBadge').textContent = 'APY: ~' + apy.toFixed(2) + '%';
         }
@@ -1047,6 +1141,18 @@
       }
 
       document.getElementById('checkBtn').disabled = false;
+    }
+
+    // ════════════════════════════════════════
+    // DETAILS TOGGLE
+    // ════════════════════════════════════════
+    function toggleDetails() {
+      var btn = document.getElementById('detailsToggle');
+      var content = document.getElementById('detailsContent');
+      var isOpen = content.classList.contains('open');
+      content.classList.toggle('open');
+      btn.classList.toggle('open');
+      btn.querySelector('span').textContent = isOpen ? 'Show Details' : 'Hide Details';
     }
 
     // ════════════════════════════════════════
